@@ -1,0 +1,51 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'date'
+require 'fileutils'
+require 'json'
+require 'optparse'
+
+$LOAD_PATH.unshift(File.expand_path('../lib', __dir__))
+require 'sous_chefs_stats/inventory'
+require 'sous_chefs_stats/repo_report'
+require 'sous_chefs_stats/report_validator'
+require 'sous_chefs_stats/slack_report'
+
+options = { date: Date.today.iso8601 }
+OptionParser.new do |parser|
+  parser.on('--date YYYY-MM-DD', 'Report date, defaults to today') { |value| options[:date] = value }
+end.parse!
+
+Date.iso8601(options[:date])
+root = File.expand_path('..', __dir__)
+token = ENV.fetch('GITHUB_TOKEN')
+repositories = SousChefsStats::Inventory.new(token: token).fetch
+raise 'repository discovery returned no active public non-fork repositories' if repositories.empty?
+unless repositories.all? { |repo| repo['default_branch'].to_s.length.positive? }
+  raise 'repository discovery returned a repository without a default branch'
+end
+
+inventory_path = File.join(root, 'repository_inventory', "#{options[:date]}.json")
+FileUtils.mkdir_p(File.dirname(inventory_path))
+File.write(inventory_path, JSON.pretty_generate(repositories) + "\n")
+
+report = SousChefsStats::RepoReport.new(root: root).generate(
+  date: options[:date], repositories: repositories, token: token
+)
+SousChefsStats::ReportValidator.new.validate!(report: report, repositories: repositories)
+
+report_path = File.join(root, 'repo_reports', "#{options[:date]}.md")
+FileUtils.mkdir_p(File.dirname(report_path))
+File.write(report_path, report)
+
+slack = SousChefsStats::SlackReport.new.build(
+  date: options[:date], report: report, repositories: repositories
+)
+slack_path = File.join(root, 'slack_reports', "#{options[:date]}.md")
+FileUtils.mkdir_p(File.dirname(slack_path))
+File.write(slack_path, slack)
+
+puts "Generated #{report_path}"
+puts "Generated #{slack_path}"
+puts "Preserved #{inventory_path}"

@@ -1,0 +1,32 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install ImageMagick for oss-stats
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install imagemagick libmagickwand-dev
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+          bundler-cache: true
+      - name: Run tests
+        run: bundle exec rspec
+      - name: Check Ruby syntax
+        run: |
+          ruby -c bin/generate_weekly_report
+          ruby -c lib/sous_chefs_stats/inventory.rb
+          ruby -c lib/sous_chefs_stats/repo_report.rb
+          ruby -c lib/sous_chefs_stats/report_validator.rb
+          ruby -c lib/sous_chefs_stats/slack_report.rb
