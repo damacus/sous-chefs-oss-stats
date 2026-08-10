@@ -35,9 +35,9 @@ RSpec.describe SousChefsStats::SlackReport do
       date: '2026-08-10', report:, repositories: [{}, {}]
     )
 
-    expect(result).to include('Pull requests: *6 open*, 1 opened, 3 closed; 3 stale.')
-    expect(result).to include('Issues: *6 open*, 2 opened, 1 closed; 7 stale.')
-    expect(result).to include('CI: *1 repositories* have active GitHub Actions failures.')
-    expect(result).to include('`apt` (6 stale)')
+    expect(result).to include('Pull requests: *6 open*; 1 still open and created this week; 3 closed; 3 stale.')
+    expect(result).to include('Issues: *6 open*; 2 still open and created this week; 1 closed; 7 stale.')
+    expect(result).not_to include('CI:')
+    expect(result).to include('`apt` (9 stale)')
   end
 end

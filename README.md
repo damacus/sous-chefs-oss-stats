@@ -3,8 +3,8 @@
 This is a public-repository-ready trial for a weekly Sous-Chefs health report.
 It discovers the current active public, non-fork repositories from the GitHub
 organization API every run, then asks [oss-stats](https://github.com/jaymzh/oss-stats)
-for GitHub PR, issue, and Actions CI statistics. It does not query Buildkite
-and does not post to Slack or n8n.
+for GitHub PR and issue statistics. It does not query Buildkite or enumerate
+GitHub Actions workflows, and does not post to Slack or n8n.
 
 ## Artifacts
 
@@ -15,8 +15,8 @@ Each run writes three dated, reviewable artifacts:
 - `slack_reports/YYYY-MM-DD.md`: concise Slack `mrkdwn` suitable for a downstream publisher.
 
 The generator rejects empty output, explicit `oss-stats` errors, or a report
-whose repository section count differs from the saved inventory. This prevents
-a partial report from looking successful.
+whose repository sections or metrics differ from the saved inventory. This
+prevents a partial report from looking successful.
 
 ## Local Run
 
@@ -31,6 +31,11 @@ UTC every Thursday, which is before 17:00 Europe/London in both GMT and BST,
 and opens or fast-forwards a pull request containing the three artifacts. It
 intentionally makes no Slack or n8n call, so publishing remains a separate,
 reviewable decision.
+
+CI health is deliberately outside this trial. Scanning every workflow in the
+organization would exceed a repository `GITHUB_TOKEN` request budget; it needs
+a separate rate-efficient collector rather than silently publishing partial CI
+coverage.
 
 ## Trial Exit Criteria
 

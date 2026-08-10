@@ -4,7 +4,7 @@ require 'fileutils'
 require 'open3'
 
 module SousChefsStats
-  # Runs oss-stats in GitHub-only mode over the dynamic inventory.
+  # Runs oss-stats PR and issue modes over the dynamic inventory.
   class RepoReport
     def initialize(root:, runner: Open3)
       @root = root
@@ -19,7 +19,7 @@ module SousChefsStats
       stdout, stderr, status = @runner.capture3(
         { 'GITHUB_TOKEN' => token, 'GH_TOKEN' => token },
         'bundle', 'exec', 'repo_stats', '--config', config_path,
-        '--mode', 'pr,issue,ci', chdir: @root
+        '--mode', 'pr,issue', chdir: @root
       )
       unless status.success?
         raise "oss-stats failed: #{stderr.strip.empty? ? stdout.strip : stderr.strip}"
@@ -50,7 +50,6 @@ module SousChefsStats
         include_list false
         count_unmerged_prs false
         log_level :info
-        ci_timeout 600
         organizations(
           {
             'sous-chefs' => {

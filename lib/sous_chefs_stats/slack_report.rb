@@ -11,9 +11,8 @@ module SousChefsStats
         "GitHub health across *#{repositories.length}* active public non-fork repositories.",
         '',
         '*This week*',
-        "- Pull requests: *#{metrics[:pr_open]} open*, #{metrics[:pr_opened]} opened, #{metrics[:pr_closed]} closed; #{metrics[:pr_stale]} stale.",
-        "- Issues: *#{metrics[:issue_open]} open*, #{metrics[:issue_opened]} opened, #{metrics[:issue_closed]} closed; #{metrics[:issue_stale]} stale.",
-        "- CI: *#{failing_ci_repositories(report)} repositories* have active GitHub Actions failures.",
+        "- Pull requests: *#{metrics[:pr_open]} open*; #{metrics[:pr_opened]} still open and created this week; #{metrics[:pr_closed]} closed; #{metrics[:pr_stale]} stale.",
+        "- Issues: *#{metrics[:issue_open]} open*; #{metrics[:issue_opened]} still open and created this week; #{metrics[:issue_closed]} closed; #{metrics[:issue_stale]} stale.",
       ]
       lines << "- Watchlist: #{watchlist.join(', ')}." unless watchlist.empty?
       lines << ''
@@ -43,15 +42,9 @@ module SousChefsStats
     def stale_watchlist(report)
       report.split(/^\*_\[/).map do |section|
         name = section[/\Asous-chefs\/([^\]]+)/, 1]
-        stale = section.scan(/^\s*\* Stale (?:PR|Issue) \(>30 days without comment\): (\d+)/).flatten.map(&:to_i).max
+        stale = section.scan(/^\s*\* Stale (?:PR|Issue) \(>30 days without comment\): (\d+)/).flatten.sum(&:to_i)
         "`#{name}` (#{stale} stale)" if name && stale.to_i.positive?
       end.compact.sort_by { |entry| -entry[/\((\d+) stale\)/, 1].to_i }.first(3)
-    end
-
-    def failing_ci_repositories(report)
-      report.split(/^\*_\[/).drop(1).count do |section|
-        section.match?(/^\s*\* Branch: .* has the following failures:/)
-      end
     end
   end
 end
